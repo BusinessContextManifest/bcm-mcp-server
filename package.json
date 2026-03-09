@@ -1,0 +1,18 @@
+{
+  "name": "bcm-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for querying the BCM Registry — lets Claude and other AI agents look up how to transact with any company",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "bcm-mcp-server": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["bcm", "mcp", "ai-agents", "b2b", "model-context-protocol"],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  }
+}
