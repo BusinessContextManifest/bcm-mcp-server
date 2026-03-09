@@ -29,6 +29,36 @@ server.tool(
     ]).describe("Type of B2B transaction"),
   },
   async ({ domain, transaction_type }) => {
+    // 1. Try the company's own .well-known/bcm.json first
+    try {
+      const wellKnownUrl = `https://${domain}/.well-known/bcm.json`;
+      const wkRes = await fetch(wellKnownUrl, { signal: AbortSignal.timeout(5000) });
+
+      if (wkRes.ok) {
+        const wkData = await wkRes.json();
+
+        if (
+          wkData &&
+          typeof wkData.transaction_types === "object" &&
+          wkData.transaction_types !== null &&
+          wkData.transaction_types[transaction_type]
+        ) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(wkData.transaction_types[transaction_type], null, 2),
+              },
+            ],
+          };
+        }
+        // .well-known exists but doesn't contain this transaction type — fall through to registry
+      }
+    } catch {
+      // .well-known fetch failed (404, network error, timeout, invalid JSON, etc.) — fall through silently
+    }
+
+    // 2. Fall back to the central BCM registry
     const url = `${BCM_REGISTRY_URL}/api/bcm/${encodeURIComponent(domain)}/${encodeURIComponent(transaction_type)}`;
 
     try {
@@ -109,7 +139,8 @@ server.resource(
 
 A BCM is a structured JSON document that tells AI agents how to transact with a company.
 
-API: GET https://bcmspec.org/api/bcm/{domain}/{transaction_type}
+Discovery: Companies can self-host at https://{domain}/.well-known/bcm.json
+Fallback API: GET https://bcmspec.org/api/bcm/{domain}/{transaction_type}
 
 Transaction Types:
 - invoice_submission: How to submit invoices
